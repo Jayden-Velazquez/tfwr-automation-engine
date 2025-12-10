@@ -72,6 +72,26 @@ The repository is not intended to run as a standalone Python package.
 
 ---
 
+## Game Unlock Limitations
+
+This repository contains a custom gameplay engine built for **The Farmer Was Replaced**.  
+Because the game progressively unlocks mechanics, **this engine reflects the content currently unlocked in my playthrough**. As a result:
+
+- Some features **cannot be fully implemented or verified yet** (e.g., `find_treasure()` for maze navigation) because the corresponding game mechanics are still locked.
+- Certain entity behaviors (especially future crops or advanced mechanics) are **placeholder or incomplete** until I unlock them and can observe their in-game behavior.
+- Multi-drone logic is **not implemented**; the engine currently supports **a single drone** only.
+- Harvesting logic **is fully implemented** for:
+  - `grass`
+  - `bush`
+  - `tree`
+  - `carrot`
+  - `pumpkin`
+  - `sunflower`
+
+While these limitations exist, **you’re welcome to extend or adjust any logic to suit your own progression or setup**.
+
+---
+
 ## License
 
 This project uses the MIT License.  
