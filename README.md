@@ -1,4 +1,4 @@
-# tfr-automation-engine
+# tfwr-automation-engine
 
 A structured automation engine for organizing movement logic, crop behavior, and harvesting cycles in *The Farmer Was Replaced*.  
 This repository keeps all gameplay scripts clean, modular, and version-controlled, while allowing individual functions or modules to be copied into the game’s script folder as needed.
