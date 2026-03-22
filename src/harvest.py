@@ -59,97 +59,104 @@ def plant_plot_matrix(crop, plot_matrix, edge = -1):
 				smart_plant(crop)
 
 
-def harvest_entities(crop_list, fit_to_world = False):
-	farm_info = plan_plots(crop_list, fit_to_world)
-
+def harvest_entities(farm_info):
 	all_plots = farm_info["all_plots"]
 	sunflowers_dict = farm_info["sunflowers_dict"]
-	replant_sunflowers = True
+	replant_sunflowers = len(sunflowers_dict["all_sunflowers"]) < 10
 
-	while True:
-		for key in all_plots:
-			this_plot = all_plots[key]
-			route = this_plot["route"]
-			plot_crop = this_plot["plot_crop"]
-			block_crops = this_plot["block_crops"]
 
-			dm.goto_world_pos(key)
+	for key in all_plots:
+		this_plot = all_plots[key]
+		route = this_plot["route"]
+		plot_crop = this_plot["plot_crop"]
+		block_crops = this_plot["block_crops"]
 
-			for pos in route:
-				crop = block_crops[pos]
+		dm.goto_world_pos(key)
 
-				if crop == GRASS or crop == BUSH or crop == TREE or crop == CARROT:
+		for pos in route:
+			crop = block_crops[pos]
+
+			if crop == GRASS or crop == BUSH or crop == TREE or crop == CARROT:
+				dm.goto_world_pos(pos)
+				if can_harvest():
+					harvest()
+				smart_plant(crop)
+
+			elif crop == PUMPKIN:
+				not_grown = this_plot["not_grown"]
+				# using set() is required here to make a new set and not use the actual reset_not_grown set
+				reset_not_grown = set(this_plot["reset_not_grown"])
+
+				if pos in not_grown:
+					dm.goto_world_pos(pos)
+					if can_harvest() and get_entity_type() == PUMPKIN:
+						not_grown.remove(pos)
+						if len(not_grown) == 0:
+							harvest()
+							this_plot["not_grown"] = reset_not_grown
+
+					if not can_harvest() or get_entity_type() != PUMPKIN:
+						smart_plant(PUMPKIN)
+			
+			elif crop == SUNFLOWER:
+				idx = sunflowers_dict["most_idx"]
+				sorted_sunflowers = sunflowers_dict["sorted_sunflowers"]
+				all_sunflowers = sunflowers_dict["all_sunflowers"]
+
+				if pos in all_sunflowers and pos in sorted_sunflowers[idx]:
 					dm.goto_world_pos(pos)
 					if can_harvest():
 						harvest()
-						smart_plant(crop)
+						all_sunflowers.remove(pos)
+						sorted_sunflowers[idx].remove(pos)
 
-				elif crop == PUMPKIN:
-					not_grown = this_plot["not_grown"]
-					# using set() is required here to make a new set and not use the actual reset_not_grown set
-					reset_not_grown = set(this_plot["reset_not_grown"])
+						while len(sorted_sunflowers[idx]) == 0 and idx != -1:
+							idx -= 1
 
-					if pos in not_grown:
-						dm.goto_world_pos(pos)
-						if can_harvest() and get_entity_type() == PUMPKIN:
-							not_grown.remove(pos)
-							if len(not_grown) == 0:
-								harvest()
-								this_plot["not_grown"] = reset_not_grown
+						sunflowers_dict["most_idx"] = idx
 
-						if not can_harvest() or get_entity_type() != PUMPKIN:
-							smart_plant(PUMPKIN)
-				
-				elif crop == SUNFLOWER:
-					idx = sunflowers_dict["most_idx"]
-					sorted_sunflowers = sunflowers_dict["sorted_sunflowers"]
-					all_sunflowers = sunflowers_dict["all_sunflowers"]
+						if len(all_sunflowers) < 10:
+							replant_sunflowers = True
 
-					if pos in all_sunflowers and pos in sorted_sunflowers[idx]:
-						dm.goto_world_pos(pos)
-						if can_harvest():
-							harvest()
-							all_sunflowers.remove(pos)
-							sorted_sunflowers[idx].remove(pos)
+				if pos not in all_sunflowers and replant_sunflowers:
+					dm.goto_world_pos(pos)
+					smart_plant(SUNFLOWER)
+					petal_count = measure()
 
-							while len(sorted_sunflowers[idx]) == 0 and idx != -1:
-								idx -= 1
+					all_sunflowers.add(pos)
+					sorted_sunflowers[(petal_count - MIN_SUNFLOWER_PETALS)].add(pos)
 
-							sunflowers_dict["most_idx"] = idx
+					if (petal_count - MIN_SUNFLOWER_PETALS) > idx:
+						sunflowers_dict["most_idx"] = petal_count - MIN_SUNFLOWER_PETALS
 
-							if len(all_sunflowers) < 10:
-								replant_sunflowers = True
-
-					if pos not in all_sunflowers and replant_sunflowers:
-						dm.goto_world_pos(pos)
-						smart_plant(SUNFLOWER)
-						petal_count = measure()
-
-						all_sunflowers.add(pos)
-						sorted_sunflowers[(petal_count - MIN_SUNFLOWER_PETALS)].add(pos)
-
-						if (petal_count - MIN_SUNFLOWER_PETALS) > idx:
-							sunflowers_dict["most_idx"] = petal_count - MIN_SUNFLOWER_PETALS
-
-						if len(all_sunflowers) >= sunflowers_dict["expected_sunflowers"]:
-							replant_sunflowers = False
+					if len(all_sunflowers) >= sunflowers_dict["expected_sunflowers"]:
+						replant_sunflowers = False
 							
 	
 
 def plan_plots(crop_list, fit_to_world = False):
-	if fit_to_world:
-		_ = 0
-		while len(crop_list) < (get_world_size()):
-			crop_list.append(crop_list[_])
-			_ += 1
+	# if fit_to_world:
+	# 	_ = 0
+	# 	while len(crop_list) < (get_world_size()):
+	# 		crop_list.append(crop_list[_])
+	# 		_ += 1
 			
-		while len(crop_list) > (get_world_size()):
-			crop_list.pop()
+	# 	while len(crop_list) > (get_world_size()):
+	# 		crop_list.pop()
 		
+	# num_crops = len(crop_list)
+	# total_blocks = get_world_size() ** 2
+	# blocks_per_crop = total_blocks/num_crops
+	# plot_size = floor(sqrt(blocks_per_crop))
+
+	factors = list(get_factors(get_world_size()))
+	plot_size = 1
+	total_blocks = get_world_size()**2
 	num_crops = len(crop_list)
-	total_blocks = get_world_size() ** 2
-	blocks_per_crop = total_blocks/num_crops
-	plot_size = floor(sqrt(blocks_per_crop))
+	for i in range(len(factors)):
+		expected_plots = total_blocks // (factors[i]**2)
+		if factors[i] > plot_size and expected_plots > num_crops:
+			plot_size = factors[i]
 	
 	world_corner = (get_world_size() - 1, get_world_size() - 1)
 	outer_route = dm.get_route(ORIGIN, world_corner, False, plot_size)

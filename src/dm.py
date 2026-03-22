@@ -52,27 +52,31 @@ def reverse_dir(dir):
 	elif dir == West:
 		return East
 
+# Note: This function is unused and has not been tested (I purposefully haven't unlocked mazes yet)
 # args: direction to move drone, found = True when treasure found.
 # Recursively moves till treasure is found 
-def find_treasure(dir = North, found = False, visited = set()):
-	old_pos = (get_pos_x(), get_pos_y())
-	move(dir)
-	new_pos = (get_pos_x(), get_pos_y())
-	if new_pos in visited:
-		if new_pos != old_pos:
-			move(reverse_dir(dir))
-		return found
-	visited.add(new_pos)
-
-	found = (get_entity_type() == Entities.Treasure)
+def find_treasure(found = False, visited = set()):
+	found = found or (get_entity_type() == Entities.Treasure)
 	if found:
-		harvest()
-		return found
+		return True
+		
+	pos = (get_pos_x(), get_pos_y())
+	if pos in visited:
+		return False
+	visited.add(pos)
 	
-	found = find_treasure(North, found, visited)
-	found = find_treasure(East, found, visited)
-	found = find_treasure(South, found, visited)
-	found = find_treasure(West, found, visited)
+	directions = [North, South, East, West]
+	
+	for d in directions:
+		move(d)
+		found = find_treasure(found, visited)
+		
+		if found:
+			harvest()
+			return True
+		elif (get_pos_x(), get_pos_y()) != pos:
+			move(reverse_dir(d))
+	return False
 	
 # Traverses the drone through every position in the list
 def goto_all_pos(all_pos):
@@ -130,7 +134,7 @@ def goto_world_pos(target_pos):
 			down()
 
 # args: start and end coordinates (x,y) with two movements scales for the x and y directions
-# returns: coordinates for the drone to follow
+# returns: ordered coordinates for the drone to follow
 def get_route(start_pos, end_pos, as_matrix = False, i_scale = 1, j_scale = 0):
 	if j_scale == 0:
 		j_scale = i_scale
