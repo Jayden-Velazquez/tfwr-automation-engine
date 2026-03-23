@@ -62,19 +62,18 @@ def plant_plot_matrix(crop, plot_matrix, edge = -1):
 def harvest_entities(farm_info):
 	all_plots = farm_info["all_plots"]
 	sunflowers_dict = farm_info["sunflowers_dict"]
-	replant_sunflowers = len(sunflowers_dict["all_sunflowers"]) < 10
 
 
 	for key in all_plots:
 		this_plot = all_plots[key]
 		route = this_plot["route"]
 		plot_crop = this_plot["plot_crop"]
-		block_crops = this_plot["block_crops"]
+		block_crop = this_plot["block_crop"]
 
 		dm.goto_world_pos(key)
 
 		for pos in route:
-			crop = block_crops[pos]
+			crop = block_crop[pos]
 
 			if crop == GRASS or crop == BUSH or crop == TREE or crop == CARROT:
 				dm.goto_world_pos(pos)
@@ -116,9 +115,9 @@ def harvest_entities(farm_info):
 						sunflowers_dict["most_idx"] = idx
 
 						if len(all_sunflowers) < 10:
-							replant_sunflowers = True
+							sunflowers_dict["replant"] = True
 
-				if pos not in all_sunflowers and replant_sunflowers:
+				if pos not in all_sunflowers and sunflowers_dict["replant"]:
 					dm.goto_world_pos(pos)
 					smart_plant(SUNFLOWER)
 					petal_count = measure()
@@ -130,7 +129,8 @@ def harvest_entities(farm_info):
 						sunflowers_dict["most_idx"] = petal_count - MIN_SUNFLOWER_PETALS
 
 					if len(all_sunflowers) >= sunflowers_dict["expected_sunflowers"]:
-						replant_sunflowers = False
+						sunflowers_dict["replant"] = False
+
 							
 	
 
@@ -170,6 +170,8 @@ def plan_plots(crop_list, fit_to_world = False):
 	sunflowers_dict["sorted_sunflowers"] = [set(), set(), set(), set(), set(), set(), set(), set(), set()]
 	sunflowers_dict["most_idx"] = -1
 	sunflowers_dict["all_sunflowers"] = set()
+	sunflowers_dict["expected_sunflowers"] = 0
+	sunflowers_dict["replant"] = True
 
 	i = 0
 
@@ -192,7 +194,7 @@ def plan_plots(crop_list, fit_to_world = False):
 		if crop == SUNFLOWER:
 			sunflower_plots += 1
 
-		block_crops = dict()
+		block_crop = dict()
 		for in_pos in inner_route:
 			if this_plot["plot_crop"] == PUMPKIN:
 				out_x = out_pos[0]
@@ -209,9 +211,9 @@ def plan_plots(crop_list, fit_to_world = False):
 					crop = PUMPKIN
 
 
-			block_crops[in_pos] = crop
+			block_crop[in_pos] = crop
 
-		this_plot["block_crops"] = block_crops
+		this_plot["block_crop"] = block_crop
 		all_plots[out_pos] = this_plot
 
 		i += 1
